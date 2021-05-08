@@ -16,3 +16,16 @@ def projects():
 @app.route('/about')
 def about():
     return 'The about page'
+
+@app.route("/me")
+def me_api():
+    return {
+        "username": "user.username",
+        "theme": "user.theme",
+        "image": "image url",
+    }
+
+@app.route('/vector')
+def run_vector():
+    var = 'lala'
+    return var
