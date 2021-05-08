@@ -1,4 +1,5 @@
 import json
+import fasttext
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for, jsonify, Response
 )
@@ -17,14 +18,44 @@ def index():
         ' FROM post'
     ).fetchall()
 
+    return render_template('blog/index.html', posts=posts)
+
+@bp.route('/vectors')
+def vectors():
+    db = get_db()
+    posts = db.execute(
+        'SELECT id, title, body, vector'
+        ' FROM post'
+    ).fetchall()
+
     data = []
-    columns = ['id', 'title', 'body', 'author_id', 'username']
+    columns = ['id', 'title', 'body', 'vector']
 
     for post in posts:
         data.append(dict(zip(columns, post)))
+    
+    for item in data:
+        item['vector'] = list(map(lambda x: float(x), item['vector'].split()))
+
+    # function to get sentence vector
+    # for item in data:
+        # item['wordToVec'] = item['title'] + ' ' + item['body']
+       
+        # # fastText 
+        # model = fasttext.load_model("cc.id.300.bin")
+        # vector = model.get_sentence_vector(item['wordToVec'])
+        # item['vector'] = vector.tolist()
+
+        # # insert vector to db 
+        # listToStr = ' '.join(map(str, vector.tolist()))
+        # db.execute(
+        #     'UPDATE post SET vector = ?'
+        #     ' WHERE id = ?',
+        #     (listToStr, item['id'])
+        # )
+        # db.commit()
   
     return Response(json.dumps(data),  mimetype='application/json')
-    # return render_template('blog/index.html', posts=posts)
 
 
 @bp.route('/create', methods=('GET', 'POST'))

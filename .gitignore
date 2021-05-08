@@ -12,3 +12,5 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+
+cc.id.300.bin
