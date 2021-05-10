@@ -1,8 +1,6 @@
 import json
 import fasttext
 import math
-import numpy as np
-import os
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for, jsonify, Response
 )
@@ -78,7 +76,6 @@ def create():
             # function to get sentence vector
             wordToVec = title + ' ' + body
             formattedString = wordToVec.replace("\r\n", "")
-            print(formattedString)
         
             # fastText 
             model = fasttext.load_model("cc.id.300.bin")
@@ -86,7 +83,7 @@ def create():
             vectorList = vector.tolist()
 
             # insert vector to db 
-            listToStr = ' '.join(map(str, vector.tolist()))
+            listToStr = ' '.join(map(str, vectorList))
 
             db = get_db()
             db.execute(
