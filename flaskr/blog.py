@@ -99,6 +99,49 @@ def get_post(id, check_author=True):
 
     return post
 
+
+@bp.route('/<int:id>')
+def get_imilarity(id):
+    db = get_db()
+    post = db.execute(
+        'SELECT id, title, body, vector' 
+        ' FROM post'
+        ' WHERE id = ?',
+        (id,)
+    ).fetchone()
+
+    column = ['id', 'title', 'body', 'vector', 'similar_courses']  #To get column names
+    data = dict(zip(column, post))
+    data['vector'] = list(map(lambda x: float(x), data['vector'].split()))
+
+    posts = db.execute(
+        'SELECT id, title, body, vector'
+        ' FROM post'
+        ' WHERE id != ?',
+        (id,)
+    ).fetchall()
+    
+    all = []
+    columns = ['id', 'title', 'body', 'vector']
+
+    for p in posts:
+        all.append(dict(zip(columns, p)))
+
+    for item in all:
+        item['vector'] = list(map(lambda x: float(x), item['vector'].split()))
+
+    data['similar_courses'] = all
+
+    get_similarity(data, all)
+
+    return Response(json.dumps(data),  mimetype='application/json')
+
+
+def get_similarity(data, all):
+    # for item in 
+    print('hello')    
+
+
 @bp.route('/<int:id>/update', methods=('GET', 'POST'))
 @login_required
 def update(id):
