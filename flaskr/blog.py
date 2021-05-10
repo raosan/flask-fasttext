@@ -2,6 +2,7 @@ import json
 import fasttext
 import math
 import numpy as np
+import os
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for, jsonify, Response
 )
@@ -74,11 +75,24 @@ def create():
         if error is not None:
             flash(error)
         else:
+            # function to get sentence vector
+            wordToVec = title + ' ' + body
+            formattedString = wordToVec.replace("\r\n", "")
+            print(formattedString)
+        
+            # fastText 
+            model = fasttext.load_model("cc.id.300.bin")
+            vector = model.get_sentence_vector(formattedString)
+            vectorList = vector.tolist()
+
+            # insert vector to db 
+            listToStr = ' '.join(map(str, vector.tolist()))
+
             db = get_db()
             db.execute(
-                'INSERT INTO post (title, body, author_id)'
-                ' VALUES (?, ?, ?)',
-                (title, body, g.user['id'])
+                'INSERT INTO post (title, body, author_id, vector)'
+                ' VALUES (?, ?, ?, ?)',
+                (title, body, g.user['id'], listToStr)
             )
             db.commit()
             return redirect(url_for('blog.index'))
