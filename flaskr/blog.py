@@ -96,6 +96,48 @@ def create():
 
     return render_template('blog/create.html')
 
+@bp.route('/create-dummy', methods=('GET', 'POST'))
+@login_required
+def create_dummy():
+    if request.method == 'POST':
+        title = request.form['title']
+        body = request.form['body']
+        error = None
+
+        if not title:
+            error = 'Title is required.'
+
+        if error is not None:
+            flash(error)
+        else:
+            # function to get sentence vector
+            wordToVec = title + ' ' + body
+            formattedString = wordToVec.replace("\r\n", "")
+        
+            # fastText 
+            model = fasttext.load_model("cc.id.300.bin")
+            vector = model.get_sentence_vector(formattedString)
+            vectorList = vector.tolist()
+
+            # insert vector to db 
+            listToStr = ' '.join(map(str, vectorList))
+
+            i = 0
+            while i < 10000:
+                db = get_db()
+                db.execute(
+                    'INSERT INTO post (title, body, author_id, vector)'
+                    ' VALUES (?, ?, ?, ?)',
+                    (title, str(i) + body, g.user['id'], listToStr)
+                )
+                db.commit()
+                i += 1
+
+            
+            return redirect(url_for('blog.index'))
+
+    return render_template('blog/create.html')
+
 def get_post(id, check_author=True):
     post = get_db().execute(
         'SELECT p.id, title, body, created, author_id, username'
@@ -143,11 +185,17 @@ def get_courses_similarity(id):
     for item in all:
         item['vector'] = list(map(lambda x: float(x), item['vector'].split()))
         item['cosine_val']  = cosine(data['vector'], item['vector'])
-        item['vector'] = ''
+        item.pop('vector', None)
+        # item.pop('body', None)
+        # item.pop('title', None)
+
 
     all.sort(key=get_my_key, reverse=True)
-    data['similar_courses'] = all
-    data['vector'] = ''
+
+    data['similar_courses'] = all[:5]
+    data.pop('vector', None)
+
+
 
     return Response(json.dumps(data),  mimetype='application/json')
 
