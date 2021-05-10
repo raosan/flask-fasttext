@@ -1,5 +1,7 @@
 import json
 import fasttext
+import math
+import numpy as np
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for, jsonify, Response
 )
@@ -101,7 +103,7 @@ def get_post(id, check_author=True):
 
 
 @bp.route('/<int:id>')
-def get_imilarity(id):
+def get_courses_similarity(id):
     db = get_db()
     post = db.execute(
         'SELECT id, title, body, vector' 
@@ -129,17 +131,36 @@ def get_imilarity(id):
 
     for item in all:
         item['vector'] = list(map(lambda x: float(x), item['vector'].split()))
+        item['cosine_val']  = cosine(data['vector'], item['vector'])
+        item['vector'] = ''
 
+    all.sort(key=get_my_key, reverse=True)
     data['similar_courses'] = all
-
-    get_similarity(data, all)
+    data['vector'] = ''
 
     return Response(json.dumps(data),  mimetype='application/json')
 
+def get_my_key(obj):
+  return obj['cosine_val']
 
-def get_similarity(data, all):
-    # for item in 
-    print('hello')    
+def cosine(array1, array2):
+    a = 0
+    i = 0
+    while i < len(array1):
+        a = a + (array1[i] * array2[i])
+        i += 1
+
+    b = 0
+    c = 0
+    j = 0
+    while j < len(array1):
+        b = b + (array1[j] ** 2)
+        c = c + (array2[j] ** 2)
+        j += 1
+    
+    answer = a / (math.sqrt(b) * math.sqrt(c))
+
+    return answer
 
 
 @bp.route('/<int:id>/update', methods=('GET', 'POST'))
